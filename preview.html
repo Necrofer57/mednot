@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="tr" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>MedNot - Tıp Not Hesaplayıcı</title>
+  
+  <!-- Favicon / App Icon -->
+  <link rel="icon" type="image/jpeg" href="icon.jpg" />
+  <link rel="apple-touch-icon" href="icon.jpg" />
+  
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Plus Jakarta Sans', 'sans-serif'],
+          },
+          colors: {
+            background: 'hsl(var(--background))',
+            foreground: 'hsl(var(--foreground))',
+            card: 'hsl(var(--card))',
+            border: 'hsl(var(--border))',
+            primary: 'hsl(var(--primary))',
+            muted: 'hsl(var(--muted))',
+            destructive: 'hsl(var(--destructive))',
+          }
+        }
+      }
+    }
+  </script>
+  
+  <style>
+    :root {
+      --background: 220 20% 97%;
+      --foreground: 224 71.4% 4.1%;
+      --card: 0 0% 100%;
+      --border: 220 13% 91%;
+      --primary: 221.2 83.2% 53.3%;
+      --muted: 220 14.3% 95.9%;
+      --muted-foreground: 220 8.9% 46.1%;
+      --destructive: 0 84.2% 60.2%;
+    }
+    .dark {
+      --background: 224 71.4% 4.1%;
+      --foreground: 210 40% 98%;
+      --card: 224 71.4% 6.5%;
+      --border: 217.2 32.6% 17.5%;
+      --primary: 217.2 91.2% 59.8%;
+      --muted: 217.2 32.6% 17.5%;
+      --muted-foreground: 215 20.2% 65.1%;
+      --destructive: 0 62.8% 30.6%;
+    }
+    body {
+      background-color: hsl(var(--background));
+      color: hsl(var(--foreground));
+      font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+    input[type="number"]::-webkit-inner-spin-button,
+    input[type="number"]::-webkit-outer-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+    input[type="number"] { -moz-appearance: textfield; }
+    .glass-card {
+      background: rgba(255, 255, 255, 0.75);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(226, 232, 240, 0.8);
+    }
+    .dark .glass-card {
+      background: rgba(15, 23, 42, 0.7);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(51, 65, 85, 0.5);
+    }
+    /* Custom Range Slider */
+    input[type="range"] {
+      -webkit-appearance: none;
+      appearance: none;
+      background: transparent;
+      cursor: pointer;
+    }
+    input[type="range"]::-webkit-slider-runnable-track {
+      height: 8px;
+      border-radius: 9999px;
+      background: rgba(148, 163, 184, 0.3);
+    }
+    .dark input[type="range"]::-webkit-slider-runnable-track {
+      background: rgba(51, 65, 85, 0.6);
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      height: 22px;
+      width: 22px;
+      border-radius: 50%;
+      background: #3b82f6;
+      border: 3px solid #ffffff;
+      box-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
+      margin-top: -7px;
+      transition: transform 0.15s ease;
+    }
+    .dark input[type="range"]::-webkit-slider-thumb {
+      background: #60a5fa;
+      border-color: #0f172a;
+    }
+    input[type="range"]::-webkit-slider-thumb:hover {
+      transform: scale(1.15);
+    }
+  </style>
+
+  <!-- React & Babel Standalone -->
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body class="min-h-screen antialiased selection:bg-blue-500/20 selection:text-blue-500">
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect, useMemo } = React;
+
+    function App() {
+      const [theme, setTheme] = useState(() => localStorage.getItem('mednot_theme') || 'dark');
+      const [isInfoOpen, setIsInfoOpen] = useState(false);
+
+      const [settings, setSettings] = useState(() => {
+        try {
+          const saved = localStorage.getItem('mednot_settings');
+          if (saved) return JSON.parse(saved);
+        } catch(e){}
+        return { boardCount: 5, passingGrade: 60, exemptionLimit: 85 };
+      });
+
+      const [grades, setGrades] = useState(() => {
+        try {
+          const saved = localStorage.getItem('mednot_grades');
+          if (saved) return JSON.parse(saved);
+        } catch(e){}
+        return Array.from({ length: 5 }, (_, i) => ({ id: i + 1, name: `${i + 1}. Kurul`, score: 0 }));
+      });
+
+      useEffect(() => {
+        document.documentElement.className = theme;
+        localStorage.setItem('mednot_theme', theme);
+      }, [theme]);
+
+      useEffect(() => {
+        localStorage.setItem('mednot_settings', JSON.stringify(settings));
+      }, [settings]);
+
+      useEffect(() => {
+        if (!settings.boardCount || settings.boardCount <= 0) return;
+        setGrades((prev) => {
+          if (prev.length === settings.boardCount) return prev;
+          if (prev.length < settings.boardCount) {
+            const added = Array.from({ length: settings.boardCount - prev.length }, (_, idx) => ({
+              id: prev.length + idx + 1,
+              name: `${prev.length + idx + 1}. Kurul`,
+              score: 0
+            }));
+            const updated = [...prev, ...added];
+            localStorage.setItem('mednot_grades', JSON.stringify(updated));
+            return updated;
+          }
+          const updated = prev.slice(0, settings.boardCount);
+          localStorage.setItem('mednot_grades', JSON.stringify(updated));
+          return updated;
+        });
+      }, [settings.boardCount]);
+
+      const updateGrade = (id, score) => {
+        const clamped = Math.max(0, Math.min(100, isNaN(score) ? 0 : score));
+        const updated = grades.map(g => g.id === id ? { ...g, score: clamped } : g);
+        setGrades(updated);
+        localStorage.setItem('mednot_grades', JSON.stringify(updated));
+      };
+
+      const updateSetting = (key, val) => {
+        setSettings(prev => ({ ...prev, [key]: val }));
+      };
+
+      const resetGrades = () => {
+        const reset = grades.map(g => ({ ...g, score: 0 }));
+        setGrades(reset);
+        localStorage.setItem('mednot_grades', JSON.stringify(reset));
+      };
+
+      const result = useMemo(() => {
+        const count = settings.boardCount;
+        const sum = grades.reduce((acc, curr) => acc + curr.score, 0);
+        const boardAverage = count > 0 ? sum / count : 0;
+        const rawFinalRequired = (settings.passingGrade - (boardAverage * 0.6)) / 0.4;
+        
+        const isExempt = boardAverage >= settings.exemptionLimit;
+        let finalRequired = rawFinalRequired;
+        let isBarajApplied = false;
+
+        if (finalRequired < 50.0) {
+          finalRequired = 50.0;
+          isBarajApplied = true;
+        }
+
+        const isImpossible = rawFinalRequired > 100;
+        const isRisky = rawFinalRequired > 80 && rawFinalRequired <= 100;
+
+        let statusMessage = '✅ Barajı geçmek için gerekli minimum final notunuz hesaplandı.';
+        let statusType = 'info';
+
+        if (isExempt) {
+          statusMessage = '🎉 Tebrikler! Muafiyet sınırını geçtiniz, finale girmeniz gerekmeyebilir!';
+          statusType = 'success';
+        } else if (isImpossible) {
+          statusMessage = `⚠️ Dikkat! Finalden 100+ (${rawFinalRequired.toFixed(1)}) almanız gerekiyor. Zorlu bir durum!`;
+          statusType = 'danger';
+        } else if (isRisky) {
+          statusMessage = '🔥 Yüksek Hedef! Yıl sonu barajını geçmek için yüksek final notu gerekli.';
+          statusType = 'warning';
+        } else if (isBarajApplied) {
+          statusMessage = 'ℹ️ Ortalamanız yüksek olsa dahi tıp mevzuatı gereği finalden en az 50 almalısınız.';
+          statusType = 'info';
+        }
+
+        return { boardAverage, finalRequired, isExempt, isImpossible, isBarajApplied, isRisky, statusMessage, statusType };
+      }, [grades, settings]);
+
+      // SVG Circle Gauge constants
+      const radius = 34;
+      const circumference = 2 * Math.PI * radius;
+      const strokeDashoffset = circumference - (Math.min(100, Math.max(0, result.boardAverage)) / 100) * circumference;
+
+      return (
+        <div className="min-h-screen pb-16">
+          {/* Header */}
+          <header className="sticky top-0 z-40 w-full backdrop-blur-xl bg-slate-900/70 border-b border-slate-800">
+            <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <img
+                  src="icon.jpg"
+                  alt="MedNot Logo"
+                  className="w-10 h-10 rounded-2xl object-cover shadow-lg shadow-blue-500/30 border border-white/10 hover:scale-105 transition-transform duration-200"
+                />
+                <div>
+                  <h1 className="text-xl font-black bg-gradient-to-r from-blue-400 via-indigo-400 to-sky-400 bg-clip-text text-transparent">
+                    MedNot
+                  </h1>
+                  <p className="text-xs text-blue-400 font-medium">Tıp Not Hesaplayıcı</p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setIsInfoOpen(true)}
+                  className="p-2.5 rounded-xl bg-slate-800 border border-slate-700 text-slate-300 hover:text-white transition"
+                  title="Bilgi"
+                >
+                  <i data-lucide="info" className="w-5 h-5"></i>
+                </button>
+                <button
+                  onClick={() => setTheme(t => t === 'dark' ? 'light' : 'dark')}
+                  className="p-2.5 rounded-xl bg-slate-800 border border-slate-700 text-slate-300 hover:text-white transition"
+                  title="Tema"
+                >
+                  <i data-lucide={theme === 'dark' ? 'sun' : 'moon'} className="w-5 h-5"></i>
+                </button>
+              </div>
+            </div>
+          </header>
+
+          {/* Main Container */}
+          <main className="max-w-6xl mx-auto px-4 pt-6 space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+              
+              {/* Left Column: Dashboard & Settings */}
+              <div className="lg:col-span-5 space-y-6 lg:sticky lg:top-24">
+                
+                {/* Result Dashboard */}
+                <div className="relative overflow-hidden rounded-3xl p-6 glass-card shadow-2xl space-y-6">
+                  <div className="flex items-center justify-between gap-4">
+                    <div className="flex items-center gap-3">
+                      <div className="relative w-20 h-20 flex items-center justify-center shrink-0">
+                        <svg className="w-full h-full transform -rotate-90" viewBox="0 0 80 80">
+                          <circle cx="40" cy="40" r={radius} className="stroke-slate-700" strokeWidth="7" fill="transparent" />
+                          <circle
+                            cx="40" cy="40" r={radius}
+                            className="stroke-blue-500 transition-all duration-500"
+                            strokeWidth="7"
+                            strokeDasharray={circumference}
+                            strokeDashoffset={strokeDashoffset}
+                            strokeLinecap="round"
+                            fill="transparent"
+                          />
+                        </svg>
+                        <div className="absolute text-center">
+                          <span className="text-lg font-black">{result.boardAverage.toFixed(1)}</span>
+                        </div>
+                      </div>
+                      <div>
+                        <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Kurul Ortalaması</span>
+                        <p className="text-sm font-semibold">%{result.boardAverage.toFixed(1)} Başarı Puanı</p>
+                      </div>
+                    </div>
+
+                    <div className="text-right">
+                      <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Final Gereksinimi</span>
+                      <div className="text-3xl font-black text-blue-400">
+                        {result.isExempt ? 'MUAF' : result.finalRequired.toFixed(1)}
+                      </div>
+                      {!result.isExempt && <span className="text-xs text-slate-400">/ 100</span>}
+                    </div>
+                  </div>
+
+                  {/* Status Banner */}
+                  <div className={`p-4 rounded-2xl border text-xs sm:text-sm font-semibold ${
+                    result.statusType === 'success' ? 'bg-emerald-500/10 text-emerald-300 border-emerald-500/30' :
+                    result.statusType === 'danger' ? 'bg-red-500/10 text-red-400 border-red-500/30' :
+                    result.statusType === 'warning' ? 'bg-amber-500/10 text-amber-300 border-amber-500/30' :
+                    'bg-blue-500/10 text-blue-300 border-blue-500/30'
+                  }`}>
+                    {result.statusMessage}
+                  </div>
+                </div>
+
+                {/* Settings Card */}
+                <div className="glass-card rounded-2xl p-6 space-y-4">
+                  <h2 className="font-bold text-lg flex items-center gap-2">
+                    <i data-lucide="sliders" className="w-4 h-4 text-blue-400"></i> Sistem Ayarları
+                  </h2>
+                  <div className="grid grid-cols-3 gap-3">
+                    <div>
+                      <label className="text-xs font-semibold text-slate-400">Kurul Sayısı</label>
+                      <input
+                        type="number" min="1" max="10" placeholder="1"
+                        value={settings.boardCount === 0 ? '' : settings.boardCount}
+                        onChange={(e) => {
+                          const val = e.target.value === '' ? 0 : parseInt(e.target.value);
+                          updateSetting('boardCount', isNaN(val) ? 0 : val);
+                        }}
+                        className="w-full mt-1 bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm font-bold text-white"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs font-semibold text-slate-400">Geçme Notu</label>
+                      <input
+                        type="number" min="0" max="100" placeholder="0"
+                        value={settings.passingGrade === 0 ? '' : settings.passingGrade}
+                        onChange={(e) => {
+                          const val = e.target.value === '' ? 0 : parseFloat(e.target.value);
+                          updateSetting('passingGrade', isNaN(val) ? 0 : val);
+                        }}
+                        className="w-full mt-1 bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm font-bold text-white"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs font-semibold text-slate-400">Muafiyet Sınırı</label>
+                      <input
+                        type="number" min="0" max="100" placeholder="0"
+                        value={settings.exemptionLimit === 0 ? '' : settings.exemptionLimit}
+                        onChange={(e) => {
+                          const val = e.target.value === '' ? 0 : parseFloat(e.target.value);
+                          updateSetting('exemptionLimit', isNaN(val) ? 0 : val);
+                        }}
+                        className="w-full mt-1 bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm font-bold text-white"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Right Column: Grades */}
+              <div className="lg:col-span-7 space-y-4">
+                <div className="flex items-center justify-between">
+                  <h2 className="font-bold text-lg">Kurul Not Girdileri ({grades.length})</h2>
+                  <button
+                    onClick={resetGrades}
+                    className="text-xs font-semibold text-slate-400 hover:text-red-400 px-3 py-1.5 rounded-lg hover:bg-slate-800 transition"
+                  >
+                    Sıfırla
+                  </button>
+                </div>
+
+                <div className="space-y-3">
+                  {grades.map((grade) => (
+                    <div key={grade.id} className="glass-card rounded-xl p-4 flex items-center gap-4">
+                      <div className="w-10 h-10 rounded-full bg-blue-500/10 text-blue-400 font-extrabold flex items-center justify-center shrink-0">
+                        {grade.id}
+                      </div>
+                      <span className="font-semibold text-sm w-24 shrink-0">{grade.name}</span>
+                      <input
+                        type="range" min="0" max="100" value={grade.score}
+                        onChange={(e) => updateGrade(grade.id, parseFloat(e.target.value))}
+                        className="flex-1"
+                      />
+                      <input
+                        type="number" min="0" max="100"
+                        value={grade.score === 0 ? '' : grade.score}
+                        placeholder="0"
+                        onChange={(e) => updateGrade(grade.id, parseFloat(e.target.value))}
+                        className="w-20 text-center font-extrabold text-base rounded-xl py-2 bg-slate-900 border border-slate-700"
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </main>
+
+          {/* Info Modal */}
+          {isInfoOpen && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
+              <div className="fixed inset-0 bg-black/70 backdrop-blur-sm" onClick={() => setIsInfoOpen(false)} />
+              <div className="relative w-full max-w-lg bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-7 space-y-4 z-10 max-h-[85vh] overflow-y-auto">
+                <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+                  <h3 className="font-extrabold text-lg text-white flex items-center gap-2">
+                    <i data-lucide="info" className="w-5 h-5 text-blue-400"></i> Bilgi & Çalışma Mantığı
+                  </h3>
+                  <button
+                    onClick={() => setIsInfoOpen(false)}
+                    className="w-8 h-8 rounded-full bg-slate-800 text-slate-400 hover:text-white flex items-center justify-center"
+                  >
+                    ✕
+                  </button>
+                </div>
+
+                <div className="space-y-3.5 text-xs text-slate-300 leading-relaxed">
+                  {/* How it works */}
+                  <div className="p-3.5 rounded-2xl bg-slate-800/60 border border-slate-700/50 space-y-1.5">
+                    <div className="font-bold text-white text-sm">MedNot Nasıl Çalışır?</div>
+                    <p>
+                      MedNot, tıp öğrencilerinin yıl içi kurul notlarını, geçme ve muafiyet barajlarını analiz ederek final sınavında alması gereken hedef puanı anında hesaplar:
+                    </p>
+                    <ul className="list-disc list-inside space-y-1 text-slate-200">
+                      <li>Yıl içi kurulların ağırlığı <strong>%60</strong>, final sınavının ağırlığı <strong>%40</strong>'tır.</li>
+                      <li>Hesaplanan değerler cihazınızda saklanır (localStorage).</li>
+                    </ul>
+                  </div>
+
+                  {/* Formula */}
+                  <div className="p-3.5 rounded-2xl bg-blue-500/10 border border-blue-500/20 space-y-1 text-center">
+                    <div className="font-bold text-blue-400 text-xs">HESAPLAMA FORMÜLÜ</div>
+                    <div className="font-mono text-sm font-bold text-white">
+                      Final Notu = [Geçme Notu - (Kurul Ort. × 0.60)] / 0.40
+                    </div>
+                  </div>
+
+                  {/* 50 Barajı */}
+                  <div className="p-3.5 rounded-2xl bg-blue-500/10 border border-blue-500/20 space-y-1">
+                    <div className="font-bold text-blue-400 text-xs">50 BARAJI KURALI</div>
+                    <p className="text-slate-300">
+                      Tıp Fakültesi mevzuatına göre, yıl içi ortalamanız kaç olursa olsun finalden <strong>en az 50.0</strong> almanız zorunludur.
+                    </p>
+                  </div>
+
+                  {/* Muafiyet */}
+                  <div className="p-3.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 space-y-1">
+                    <div className="font-bold text-emerald-400 text-xs">MUAFİYET ŞARTI</div>
+                    <p className="text-slate-300">
+                      Kurul ortalamanız belirlenen Muafiyet Sınırına ulaştığında final sınavından muaf tutulursunuz (<strong>MUAF</strong>).
+                    </p>
+                  </div>
+
+                  {/* Developer Credit */}
+                  <div className="p-3.5 rounded-2xl bg-gradient-to-r from-blue-600/20 via-indigo-600/20 to-sky-600/20 border border-blue-500/30 flex items-center justify-between">
+                    <div>
+                      <span className="text-[10px] font-bold text-slate-400 block uppercase">Uygulama Geliştiricisi</span>
+                      <span className="text-sm font-extrabold text-blue-300">Ahmet Efe Sezgin</span>
+                    </div>
+                    <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-slate-800 text-slate-200 border border-slate-700">
+                      MedNot v1.0
+                    </span>
+                  </div>
+                </div>
+
+                <button
+                  onClick={() => setIsInfoOpen(false)}
+                  className="w-full py-3 bg-blue-600 font-bold rounded-2xl text-white hover:bg-blue-500 transition shadow-lg shadow-blue-500/20"
+                >
+                  Anlaşıldı
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+    setTimeout(() => { if (window.lucide) lucide.createIcons(); }, 300);
+  </script>
+</body>
+</html>
