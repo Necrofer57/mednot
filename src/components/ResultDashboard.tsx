@@ -98,7 +98,7 @@ export const ResultDashboard: React.FC<ResultDashboardProps> = ({ result }) => {
             </p>
             {isExempt && (
               <span className="inline-flex items-center gap-1 text-xs font-bold text-emerald-600 dark:text-emerald-400 mt-1">
-                <Sparkles className="w-3.5 h-3.5" /> Muafiyet Hak Kazandı
+                <Sparkles className="w-3.5 h-3.5" /> Finalsiz Geçtiniz
               </span>
             )}
           </div>
@@ -127,13 +127,13 @@ export const ResultDashboard: React.FC<ResultDashboardProps> = ({ result }) => {
 
           <div className="flex items-baseline gap-1.5">
             <span className={`text-4xl sm:text-5xl font-black tracking-tight ${getRequiredScoreStyle()}`}>
-              {isExempt ? 'MUAF' : finalRequired.toFixed(1)}
+              {isExempt ? 'FİNALSIZ' : finalRequired.toFixed(1)}
             </span>
             {!isExempt && <span className="text-lg font-bold text-muted-foreground">/ 100</span>}
           </div>
           <p className="text-xs text-muted-foreground mt-1">
             {isExempt
-              ? 'Tüm kurullardan muafiyet hakkı kazanılmıştır.'
+              ? 'Finalsiz geçme hakkı kazanılmıştır.'
               : 'Barajı geçmek için final sınavından gereken not.'}
           </p>
         </div>

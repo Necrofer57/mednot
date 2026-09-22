@@ -8,6 +8,8 @@ const DEFAULT_SETTINGS: Settings = {
   boardCount: 5,
   passingGrade: 60,
   exemptionLimit: 85,
+  boardWeight: 60,
+  finalWeight: 40,
 };
 
 const getDefaultGrades = (count: number): BoardGrade[] => {
@@ -25,10 +27,14 @@ export const useCalculator = () => {
       const saved = localStorage.getItem(STORAGE_KEY_SETTINGS);
       if (saved) {
         const parsed = JSON.parse(saved);
+        const boardWeight = typeof parsed.boardWeight === 'number' ? parsed.boardWeight : 60;
+        const finalWeight = typeof parsed.finalWeight === 'number' ? parsed.finalWeight : (100 - boardWeight);
         return {
           boardCount: Math.max(1, Math.min(10, Number(parsed.boardCount) || 5)),
           passingGrade: Math.max(0, Math.min(100, Number(parsed.passingGrade) || 60)),
           exemptionLimit: Math.max(0, Math.min(100, Number(parsed.exemptionLimit) || 85)),
+          boardWeight,
+          finalWeight,
         };
       }
     } catch (e) {
@@ -114,10 +120,28 @@ export const useCalculator = () => {
 
   // Update settings fields
   const updateSetting = (key: keyof Settings, value: number) => {
-    setSettings((prev) => ({
-      ...prev,
-      [key]: value,
-    }));
+    setSettings((prev) => {
+      if (key === 'boardWeight') {
+        const bw = Math.max(0, Math.min(100, isNaN(value) ? 0 : value));
+        return {
+          ...prev,
+          boardWeight: bw,
+          finalWeight: 100 - bw,
+        };
+      }
+      if (key === 'finalWeight') {
+        const fw = Math.max(0, Math.min(100, isNaN(value) ? 0 : value));
+        return {
+          ...prev,
+          boardWeight: 100 - fw,
+          finalWeight: fw,
+        };
+      }
+      return {
+        ...prev,
+        [key]: value,
+      };
+    });
   };
 
   // Reset all grades to 0
@@ -132,8 +156,13 @@ export const useCalculator = () => {
     const sum = grades.reduce((acc, curr) => acc + curr.score, 0);
     const boardAverage = totalCount > 0 ? sum / totalCount : 0;
 
-    // Formula: Final Required = (Passing Grade - (Board Average * 0.6)) / 0.4
-    const rawFinalRequired = (settings.passingGrade - boardAverage * 0.6) / 0.4;
+    const boardWeightRate = (settings.boardWeight ?? 60) / 100;
+    const finalWeightRate = (settings.finalWeight ?? 40) / 100;
+
+    // Formula: Final Required = (Passing Grade - (Board Average * boardWeightRate)) / finalWeightRate
+    const rawFinalRequired = finalWeightRate > 0
+      ? (settings.passingGrade - boardAverage * boardWeightRate) / finalWeightRate
+      : 0;
     
     // Check if exemption threshold met (and all boards filled)
     const isExempt = boardAverage >= settings.exemptionLimit;
@@ -154,7 +183,7 @@ export const useCalculator = () => {
     let statusType: 'success' | 'warning' | 'danger' | 'info' = 'info';
 
     if (isExempt) {
-      statusMessage = '🎉 Tebrikler! Muafiyet sınırını geçtiniz, finale girmeniz gerekmeyebilir!';
+      statusMessage = '🎉 Tebrikler! Finalsiz geçme sınırını geçtiniz, finale girmeniz gerekmeyebilir!';
       statusType = 'success';
     } else if (isImpossible) {
       statusMessage = `⚠️ Dikkat! Finalden 100+ (${rawFinalRequired.toFixed(1)}) almanız gerekiyor. Zorlu bir durum!`;

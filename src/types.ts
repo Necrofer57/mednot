@@ -2,6 +2,8 @@ export interface Settings {
   boardCount: number;
   passingGrade: number;
   exemptionLimit: number;
+  boardWeight: number;
+  finalWeight: number;
 }
 
 export interface BoardGrade {

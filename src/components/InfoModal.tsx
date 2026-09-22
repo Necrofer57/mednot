@@ -49,11 +49,11 @@ export const InfoModal: React.FC<InfoModalProps> = ({ isOpen, onClose }) => {
               <span>MedNot Nasıl Çalışır?</span>
             </div>
             <p className="text-xs text-muted-foreground">
-              MedNot, tıp öğrencilerinin dönem içi kurul notlarını, yıl sonu geçme notunu ve muafiyet barajlarını analiz ederek final sınavında alması gereken hedef notu anında hesaplar:
+              MedNot, tıp öğrencilerinin dönem içi kurul notlarını, yıl sonu geçme notunu ve finalsiz geçme barajlarını analiz ederek final sınavında alması gereken hedef notu anında hesaplar:
             </p>
             <ul className="text-xs space-y-1.5 list-disc list-inside text-foreground/90 font-medium">
               <li>Girilen kurul sayılarına göre anlık **Kurul Ortalaması** çıkarılır.</li>
-              <li>Kurulların yıl sonu başarımına etkisi **%60**, final sınavının etkisi **%40**'tır.</li>
+              <li>Kurul ve Final ağırlık oranları fakültenize göre ayarlanabilir (varsayılan: **%60 Kurul**, **%40 Final**).</li>
               <li>Değerler ve ayarlar otomatik olarak cihazınıza kaydedilir (`localStorage`).</li>
             </ul>
           </div>
@@ -65,7 +65,7 @@ export const InfoModal: React.FC<InfoModalProps> = ({ isOpen, onClose }) => {
               <span>Hesaplama Formülü</span>
             </div>
             <div className="p-2.5 rounded-xl bg-background border text-xs font-mono text-primary font-bold text-center">
-              Gerekli Final Notu = [Geçme Notu - (Kurul Ortalaması × 0.60)] / 0.40
+              Gerekli Final Notu = [Geçme Notu - (Kurul Ortalaması × Kurul Oranı)] / Final Oranı
             </div>
           </div>
 
@@ -80,14 +80,14 @@ export const InfoModal: React.FC<InfoModalProps> = ({ isOpen, onClose }) => {
             </p>
           </div>
 
-          {/* Section 4: Exemption */}
+          {/* Section 4: Finalsiz Geçme */}
           <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 space-y-2 text-foreground">
             <div className="flex items-center gap-2 font-bold text-emerald-600 dark:text-emerald-400 text-sm">
               <Award className="w-4 h-4" />
-              <span>Muafiyet Şartı</span>
+              <span>Finalsiz Geçme Şartı</span>
             </div>
             <p className="text-xs text-muted-foreground">
-              Kurul ortalamanız belirlenen Muafiyet Sınırına (örn. 85.0) ulaştığında veya geçtiğinde öğrenci finale girmekten muaf tutulur (**MUAF**).
+              Kurul ortalamanız belirlenen Finalsiz Sınırına (örn. 85.0) ulaştığında veya geçtiğinde öğrenci finale girmeden doğrudan geçmiş sayılır (**FİNALSIZ**).
             </p>
           </div>
 

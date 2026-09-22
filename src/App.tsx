@@ -49,7 +49,7 @@ export const App: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background text-foreground transition-colors duration-300 pb-16">
+    <div className="min-h-screen bg-background text-foreground transition-colors duration-300 pb-28 lg:pb-16">
       {/* Background Decorative Gradients */}
       <div className="fixed top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-96 bg-gradient-to-b from-primary/10 via-primary/5 to-transparent blur-3xl pointer-events-none -z-10" />
 
@@ -113,7 +113,7 @@ export const App: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8 items-start">
           
           {/* Left / Top Column: Results Dashboard & System Settings */}
-          <div className="lg:col-span-5 space-y-6 lg:sticky lg:top-24">
+          <div className="lg:col-span-5 space-y-6 lg:sticky lg:top-24 lg:self-start">
             {/* Hero Result Dashboard */}
             <ResultDashboard result={calculationResult} />
 
@@ -168,6 +168,55 @@ export const App: React.FC = () => {
           </div>
         </div>
       </main>
+
+      {/* Mobile Floating Sticky Result Bar (Ekranda sürekli kullanıcıyla birlikte gelen sonuç kartı) */}
+      <div className="lg:hidden fixed bottom-3 left-3 right-3 sm:left-6 sm:right-6 z-40 max-w-lg mx-auto">
+        <div className="glass-card backdrop-blur-xl bg-card/95 border border-primary/25 rounded-2xl p-3.5 shadow-2xl shadow-black/20 dark:shadow-primary/10 flex items-center justify-between gap-3 transition-all duration-300">
+          {/* Left: Board Average */}
+          <div className="flex flex-col">
+            <span className="text-[10px] font-extrabold uppercase tracking-wider text-muted-foreground">
+              Kurul Ortalaması
+            </span>
+            <div className="flex items-center gap-1.5">
+              <span className="text-lg font-black text-foreground tracking-tight">
+                %{calculationResult.boardAverage.toFixed(1)}
+              </span>
+              {calculationResult.isBarajApplied && (
+                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-blue-500/10 text-primary border border-primary/20">
+                  Baraj 50
+                </span>
+              )}
+            </div>
+          </div>
+
+          {/* Right: Target Final Score */}
+          <div className="flex items-center gap-2">
+            <div className="flex flex-col items-end text-right">
+              <span className="text-[10px] font-extrabold uppercase tracking-wider text-muted-foreground">
+                Gereken Final
+              </span>
+              <div className="flex items-baseline gap-1">
+                <span
+                  className={`text-2xl font-black tracking-tight ${
+                    calculationResult.isExempt
+                      ? 'text-emerald-500 dark:text-emerald-400'
+                      : calculationResult.isImpossible
+                      ? 'text-destructive font-black'
+                      : calculationResult.isRisky
+                      ? 'text-amber-500'
+                      : 'text-primary'
+                  }`}
+                >
+                  {calculationResult.isExempt ? 'FİNALSIZ' : calculationResult.finalRequired.toFixed(1)}
+                </span>
+                {!calculationResult.isExempt && (
+                  <span className="text-xs font-bold text-muted-foreground">/100</span>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
 
       {/* Info Modal */}
       <InfoModal isOpen={isInfoOpen} onClose={() => setIsInfoOpen(false)} />
